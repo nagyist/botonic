@@ -9,19 +9,21 @@ import { MultichannelButton } from './multichannel-button'
 import { MultichannelContext } from './multichannel-context'
 import {
   buttonTypes,
-  DEFAULT_WHATSAPP_MAX_BUTTON_SEPARATOR,
   elementHasPostback,
   elementHasUrl,
   elementHasWebview,
   getButtonType,
   getMultichannelButtons,
   getMultichannelReplies,
+} from './multichannel-utils'
+import {
+  DEFAULT_WHATSAPP_MAX_BUTTON_SEPARATOR,
   MENU_BUTTON_WHATSAPP_BUTTON_LIST,
   MULTICHANNEL_WHATSAPP_PROPS,
   WHATSAPP_LIST_MAX_BUTTONS,
   WHATSAPP_MAX_BUTTONS,
-} from './multichannel-utils'
-import { whatsappMarkdown } from './whatsapp/markdown'
+} from './whatsapp/constants'
+import { convertToMarkdownMeta } from './whatsapp/markdown-meta'
 
 export const MultichannelText = props => {
   const requestContext = useContext(RequestContext)
@@ -116,7 +118,7 @@ export const MultichannelText = props => {
     const { postbackButtons, urlButtons, webviewButtons } = getWhatsappButtons()
 
     const textElements = texts.map(text => {
-      const textWithMarkdown = whatsappMarkdown(text)
+      const textWithMarkdown = convertToMarkdownMeta(text)
       return (props.newline || '') + textWithMarkdown
     })
 
@@ -253,6 +255,7 @@ export const MultichannelText = props => {
             body={textElements[0]}
             displayText={webviewButtonElements[0].props.children}
             webview={webviewButtonElements[0].props.webview}
+            params={webviewButtonElements[0].props.params}
           />
         )
       }
@@ -283,15 +286,19 @@ export const MultichannelText = props => {
     const multichannelFacebook = new MultichannelFacebook()
     const { texts, propsLastText, propsWithoutChildren } =
       multichannelFacebook.convertText(props, text[0])
+
+    const [lastText, ...buttonsAndReplies] = propsLastText.children
     return (
       <>
-        {texts &&
-          texts.map((e, i) => (
-            <Text key={i} {...propsWithoutChildren}>
-              {e}
-            </Text>
-          ))}
-        <Text {...propsLastText}>{propsLastText.children}</Text>
+        {texts?.map((message, i) => (
+          <Text key={i} {...propsWithoutChildren}>
+            {convertToMarkdownMeta(message)}
+          </Text>
+        ))}
+        <Text {...propsLastText}>
+          {convertToMarkdownMeta(lastText)}
+          {buttonsAndReplies}
+        </Text>
       </>
     )
   }

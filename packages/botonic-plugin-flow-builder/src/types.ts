@@ -29,6 +29,7 @@ export type KnowledgeBaseFunction = (
 
 export interface FlowBuilderApiOptions {
   url: string
+  flowUrl: string
   flow?: HtFlowBuilderData
   accessToken: string
   request: PluginPreRequest
@@ -50,11 +51,7 @@ export interface KnowledgeBaseResponse {
   answer: string
   hasKnowledge: boolean
   isFaithuful: boolean
-  sources: {
-    knowledgeBaseId: string
-    knowledgeSourceId: string
-    knowledgeChunkId: string
-  }[]
+  chunkIds: string[]
 }
 
 export interface SmartIntentResponse {

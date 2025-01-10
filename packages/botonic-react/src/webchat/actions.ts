@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export enum WebchatAction {
   ADD_MESSAGE = 'addMessage',
   ADD_MESSAGE_COMPONENT = 'addMessageComponent',
@@ -14,7 +15,6 @@ export enum WebchatAction {
   TOGGLE_WEBCHAT = 'toggleWebchat',
   UPDATE_DEV_SETTINGS = 'updateDevSettings',
   UPDATE_HANDOFF = 'updateHandoff',
-  UPDATE_JWT = 'updateJwt',
   UPDATE_LAST_MESSAGE_DATE = 'updateLastMessageDate',
   UPDATE_LAST_ROUTE_PATH = 'updateLastRoutePath',
   UPDATE_LATEST_INPUT = 'updateLatestInput',
@@ -24,4 +24,7 @@ export enum WebchatAction {
   UPDATE_THEME = 'updateTheme',
   UPDATE_TYPING = 'updateTyping',
   UPDATE_WEBVIEW = 'updateWebview',
+  REMOVE_REPLIES = 'removeReplies',
+  REMOVE_WEBVIEW = 'removeWebview',
+  SET_IS_INPUT_FOCUSED = 'setIsInputFocused',
 }

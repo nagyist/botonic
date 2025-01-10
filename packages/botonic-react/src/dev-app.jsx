@@ -1,6 +1,6 @@
 import merge from 'lodash.merge'
 import React from 'react'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 import { SENDERS } from './index-types'
 import { ReactBot } from './react-bot'
@@ -26,6 +26,7 @@ export class DevApp extends WebchatApp {
     onOpen,
     onClose,
     onMessage,
+    onTrackEvent,
     ...botOptions
   }) {
     super({
@@ -45,6 +46,7 @@ export class DevApp extends WebchatApp {
       onOpen,
       onClose,
       onMessage,
+      onTrackEvent,
     })
     this.bot = new ReactBot({
       ...botOptions,
@@ -67,6 +69,7 @@ export class DevApp extends WebchatApp {
       onOpen,
       onClose,
       onMessage,
+      onTrackEvent,
       hostId,
       ...webchatOptions
     } = optionsAtRuntime
@@ -84,6 +87,7 @@ export class DevApp extends WebchatApp {
     this.onOpen = onOpen || this.onOpen
     this.onClose = onClose || this.onClose
     this.onMessage = onMessage || this.onMessage
+    this.onTrackEvent = onTrackEvent || this.onTrackEvent
     this.hostId = hostId || this.hostId
     this.createRootElement(host)
     return (
@@ -108,16 +112,17 @@ export class DevApp extends WebchatApp {
         onOpen={(...args) => this.onOpenWebchat(...args)}
         onClose={(...args) => this.onCloseWebchat(...args)}
         onUserInput={(...args) => this.onUserInput(...args)}
+        onTrackEvent={(...args) => this.onTrackEvent(...args)}
       />
     )
   }
 
   render(dest, optionsAtRuntime = {}) {
     onDOMLoaded(() => {
-      render(
-        this.getComponent(dest, optionsAtRuntime),
-        this.getReactMountNode(dest)
-      )
+      const devAppComponent = this.getComponent(dest, optionsAtRuntime)
+      const container = this.getReactMountNode(dest)
+      const reactRoot = createRoot(container)
+      reactRoot.render(devAppComponent)
     })
   }
 

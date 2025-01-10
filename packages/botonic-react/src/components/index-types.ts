@@ -1,4 +1,4 @@
-import React, { ErrorInfo } from 'react'
+import React from 'react'
 
 import { SENDERS } from '../index-types'
 import { CoverComponentProps } from '../webchat/index-types'
@@ -29,6 +29,9 @@ export interface MessageProps {
 export interface TextProps extends MessageProps {
   // converts markdown syntax to HTML
   markdown?: boolean
+  feedbackEnabled?: boolean
+  inferenceId?: string
+  botInteractionId?: string
 }
 
 export interface Webview {
@@ -46,6 +49,9 @@ export interface ButtonProps {
   autodisable?: boolean
   disabled?: boolean
   disabledstyle?: boolean
+  children: string
+  setDisabled?: (disabled: boolean) => void
+  parentId?: string
 }
 
 export interface ReplyProps {
@@ -97,22 +103,14 @@ export interface BlobProps {
   imageStyle?: any
 }
 
-export interface ScrollbarProps {
-  autoHide?: boolean
-  thumb?: {
-    bgcolor?: string
-    border?: string
-    color?: string
-    opacity?: string
-  }
-  track?: {
-    bgcolor?: string
-    border?: string
-    color?: string
-  }
+export interface CustomMessageType {
+  (props: any): JSX.Element
+  customTypeName: string
+  deserialize(msg: any): JSX.Element
 }
 
 export interface ThemeProps extends StyleProp {
+  coverComponent?: CoverComponentOptions
   mobileBreakpoint?: number
   mobileStyle?: any
   webview?: StyleProp & { header?: StyleProp }
@@ -122,11 +120,14 @@ export interface ThemeProps extends StyleProp {
   header?: { title?: string; subtitle?: string } & ImageProp &
     StyleProp &
     CustomProp
+  // TODO: Review if this is needed hear, or only in message.customTypes? use the same type in both places
+  customMessageTypes?: CustomMessageType[]
   message?: {
     bot?: BlobProps & ImageProp & StyleProp
     agent?: ImageProp
     user?: BlobProps & StyleProp
-    customTypes?: React.ComponentType[]
+    // TODO: Review type used in cutomTypes should be a component exported by default with customMessage function
+    customTypes?: CustomMessageType[]
   } & StyleProp & {
       timestamps?: {
         withImage?: boolean
@@ -162,7 +163,6 @@ export interface ThemeProps extends StyleProp {
   }
   scrollButton?: EnableProp & CustomProp
   markdownStyle?: string // string template with css styles
-  scrollbar?: ScrollbarProps & EnableProp
   userInput?: {
     attachments?: EnableProp & CustomProp
     blockInputs?: BlockInputOption[]
@@ -204,21 +204,3 @@ export interface WebchatSettingsProps {
 export type WrappedComponent<Props> = React.FunctionComponent<Props> & {
   customTypeName: string
 }
-
-// TODO: Reuse types to be typed in respective functions
-// export class ErrorBoundary<Props> extends React.Component<Props> {
-//   componentDidCatch(error: Error, errorInfo: ErrorInfo): void
-// }
-
-// export function createErrorBoundary<Props>(_?: {
-//   errorComponent: React.ComponentType
-// }): ErrorBoundary<Props>
-
-// export function customMessage<Props>(_: {
-//   name: string
-//   component: React.ComponentType<Props>
-//   defaultProps?: Record<string, unknown>
-//   errorBoundary?: ErrorBoundary<Props>
-// }): WrappedComponent<Props>
-
-// export function getDisplayName(component: React.ComponentType): string

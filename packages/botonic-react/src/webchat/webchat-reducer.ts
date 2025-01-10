@@ -10,6 +10,8 @@ export function webchatReducer(
   switch (action.type) {
     case WebchatAction.UPDATE_WEBVIEW:
       return { ...state, ...action.payload }
+    case WebchatAction.REMOVE_WEBVIEW:
+      return { ...state, webview: null, webviewParams: null }
     case WebchatAction.UPDATE_SESSION:
       return { ...state, session: { ...action.payload } }
     case WebchatAction.UPDATE_TYPING:
@@ -48,8 +50,8 @@ export function webchatReducer(
       return { ...state, lastRoutePath: action.payload }
     case WebchatAction.SET_CURRENT_ATTACHMENT:
       return { ...state, currentAttachment: action.payload }
-    case WebchatAction.UPDATE_JWT:
-      return { ...state, jwt: action.payload }
+    case WebchatAction.SET_IS_INPUT_FOCUSED:
+      return { ...state, isInputFocused: action.payload }
     default:
       return messagesReducer(state, action)
   }

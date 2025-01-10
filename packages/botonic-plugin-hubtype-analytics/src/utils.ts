@@ -3,6 +3,7 @@ import {
   HtEventCustom,
   HtEventFallback,
   HtEventFeedback,
+  HtEventFeedbackKnowledgebase,
   HtEventFlow,
   HtEventHandoff,
   HtEventHandoffOption,
@@ -10,7 +11,8 @@ import {
   HtEventIntentSmart,
   HtEventKeyword,
   HtEventKnowledgeBase,
-  HtEventWebview,
+  HtEventWebviewEnd,
+  HtEventWebviewStep,
 } from './event-models'
 import { EventAction, HtEventProps, RequestData } from './types'
 
@@ -24,6 +26,9 @@ export function createHtEvent(
     case EventAction.FeedbackMessage:
     case EventAction.FeedbackWebview:
       return new HtEventFeedback(htEventProps, requestData)
+
+    case EventAction.FeedbackKnowledgebase:
+      return new HtEventFeedbackKnowledgebase(htEventProps, requestData)
 
     case EventAction.FlowNode:
       return new HtEventFlow(htEventProps, requestData)
@@ -51,8 +56,10 @@ export function createHtEvent(
       return new HtEventFallback(htEventProps, requestData)
 
     case EventAction.WebviewStep:
+      return new HtEventWebviewStep(htEventProps, requestData)
+
     case EventAction.WebviewEnd:
-      return new HtEventWebview(htEventProps, requestData)
+      return new HtEventWebviewEnd(htEventProps, requestData)
 
     case EventAction.Custom:
       return new HtEventCustom(htEventProps, requestData)

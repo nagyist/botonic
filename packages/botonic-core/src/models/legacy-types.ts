@@ -72,6 +72,7 @@ export enum INPUT {
   CHAT_EVENT = 'chatevent',
   WHATSAPP_BUTTON_LIST = 'whatsapp-button-list',
   WHATSAPP_CTA_URL_BUTTON = 'whatsapp-cta-url-button',
+  EVENT_AGENT_MESSAGE_CREATED = 'case_event_agent_message_created',
 }
 
 export interface Locales {
@@ -112,6 +113,7 @@ export type InputType =
   | INPUT.CHAT_EVENT
   | INPUT.WHATSAPP_BUTTON_LIST
   | INPUT.WHATSAPP_CTA_URL_BUTTON
+  | INPUT.EVENT_AGENT_MESSAGE_CREATED
 
 export interface IntentResult {
   intent: string
@@ -147,7 +149,14 @@ export interface Input extends Partial<NluResult> {
   context?: {
     campaign?: Campaign
   }
-  message_id?: string
+  message_id: string
+  bot_interaction_id: string
+  agent_id?: string
+  agent_name?: string
+  message?: {
+    type: string
+    data: string
+  }
 }
 
 export interface Campaign {
@@ -189,12 +198,13 @@ export interface Session {
   _access_token: string
   _hubtype_api: string
   is_first_interaction: boolean
+  is_test_integration: boolean
   last_session?: any
   organization_id: string
   organization: string
   user: SessionUser
   // after handoff
-  _botonic_action?: string
+  _botonic_action?: BotonicActionType
   _hubtype_case_status?: CaseStatusType
   _hubtype_case_id?: string
   _hubtype_case_typification?: string
@@ -314,3 +324,21 @@ export type MatchingProp =
   | 'request'
 
 export type Matcher = string | RegExp | ((args) => boolean)
+
+export type BotonicActionType =
+  | `${BotonicAction.CreateCase}${BotonicActionSeparator}${string}`
+  | `${BotonicAction.CreateTestCase}${BotonicActionSeparator}${string}`
+  | `${BotonicAction.Redirect}${BotonicActionSeparator}${string}`
+  | `${BotonicAction.DiscardCase}${BotonicActionSeparator}${string}`
+  | `${BotonicAction.DiscardCase}`
+  | `${BotonicAction.DeleteUser}`
+
+type BotonicActionSeparator = ':'
+
+export enum BotonicAction {
+  Redirect = 'redirect_action',
+  CreateCase = 'create_case',
+  CreateTestCase = 'create_test_integration_case',
+  DeleteUser = 'delete_user',
+  DiscardCase = 'discard_case',
+}

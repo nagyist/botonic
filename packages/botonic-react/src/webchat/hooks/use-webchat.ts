@@ -1,9 +1,10 @@
-import { Input, Session } from '@botonic/core'
-import { useReducer } from 'react'
+import { Session } from '@botonic/core'
+import { useReducer, useRef } from 'react'
 
+import { Reply } from '../../components'
 import { ThemeProps, Webview } from '../../components/index-types'
 import { COLORS, WEBCHAT } from '../../constants'
-import { WebchatMessage } from '../../index-types'
+import { ClientInput, WebchatMessage } from '../../index-types'
 import { WebchatAction } from '../actions'
 import { DevSettings, ErrorMessage, WebchatState } from '../index-types'
 import { webchatReducer } from '../webchat-reducer'
@@ -19,7 +20,7 @@ export const webchatInitialState: WebchatState = {
   webview: null,
   webviewParams: null,
   session: { user: undefined },
-  lastRoutePath: null,
+  lastRoutePath: undefined,
   handoff: false,
   theme: {
     headerTitle: WEBCHAT.DEFAULTS.TITLE,
@@ -42,16 +43,60 @@ export const webchatInitialState: WebchatState = {
   isCustomComponentRendered: false,
   lastMessageUpdate: undefined,
   currentAttachment: undefined,
-  jwt: undefined,
   numUnreadMessages: 0,
   isLastMessageVisible: true,
+  isInputFocused: false,
 }
 
-export function useWebchat() {
+export interface UseWebchat {
+  addMessage: (message: WebchatMessage) => void
+  addMessageComponent: (message: { props: WebchatMessage }) => void
+  clearMessages: () => void
+  doRenderCustomComponent: (toggle: boolean) => void
+  resetUnreadMessages: () => void
+  setCurrentAttachment: (attachment?: File) => void
+  setError: (error?: ErrorMessage) => void
+  setIsInputFocused: (isInputFocused: boolean) => void
+  setLastMessageVisible: (isLastMessageVisible: boolean) => void
+  setOnline: (online: boolean) => void
+  toggleCoverComponent: (toggle: boolean) => void
+  toggleEmojiPicker: (toggle: boolean) => void
+  togglePersistentMenu: (toggle: boolean) => void
+  toggleWebchat: (toggle: boolean) => void
+  updateDevSettings: (settings: DevSettings) => void
+  updateHandoff: (handoff: boolean) => void
+  updateLastMessageDate: (date: string) => void
+  updateLastRoutePath: (path: string) => void
+  updateLatestInput: (input: ClientInput) => void
+  updateMessage: (message: WebchatMessage) => void
+  updateReplies: (replies: (typeof Reply)[]) => void
+  updateSession: (session: Partial<Session>) => void
+  updateTheme: (theme: ThemeProps, themeUpdates?: ThemeProps) => void
+  updateTyping: (typing: boolean) => void
+  updateWebview: (webview: Webview, params: Record<string, string>) => void
+  removeReplies: () => void
+  removeWebview: () => void
+  webchatState: WebchatState
+  webchatRef: React.MutableRefObject<HTMLDivElement | null> // TODO: Change name, already exists WebchatRef for useImperativeHandle
+  headerRef: React.MutableRefObject<HTMLDivElement | null>
+  chatAreaRef: React.MutableRefObject<HTMLDivElement | null>
+  scrollableMessagesListRef: React.MutableRefObject<HTMLDivElement | null>
+  repliesRef: React.MutableRefObject<HTMLDivElement | null>
+  inputPanelRef: React.MutableRefObject<HTMLDivElement | null>
+}
+
+export function useWebchat(): UseWebchat {
   const [webchatState, webchatDispatch] = useReducer(
     webchatReducer,
     webchatInitialState
   )
+
+  const webchatRef = useRef<HTMLDivElement | null>(null)
+  const chatAreaRef = useRef<HTMLDivElement | null>(null)
+  const inputPanelRef = useRef<HTMLDivElement | null>(null)
+  const headerRef = useRef<HTMLDivElement | null>(null)
+  const scrollableMessagesListRef = useRef<HTMLDivElement | null>(null)
+  const repliesRef = useRef<HTMLDivElement | null>(null)
 
   const addMessage = (message: WebchatMessage) =>
     webchatDispatch({ type: WebchatAction.ADD_MESSAGE, payload: message })
@@ -65,10 +110,13 @@ export function useWebchat() {
   const updateMessage = (message: WebchatMessage) =>
     webchatDispatch({ type: WebchatAction.UPDATE_MESSAGE, payload: message })
 
-  const updateReplies = replies =>
+  const updateReplies = (replies: (typeof Reply)[]) =>
     webchatDispatch({ type: WebchatAction.UPDATE_REPLIES, payload: replies })
 
-  const updateLatestInput = (input: Input) =>
+  const removeReplies = () =>
+    webchatDispatch({ type: WebchatAction.REMOVE_REPLIES, payload: [] })
+
+  const updateLatestInput = (input: ClientInput) =>
     webchatDispatch({ type: WebchatAction.UPDATE_LATEST_INPUT, payload: input })
 
   const updateTyping = (typing: boolean) =>
@@ -80,7 +128,12 @@ export function useWebchat() {
       payload: { webview, webviewParams: params },
     })
 
-  const updateSession = (session: Session) => {
+  const removeWebview = () =>
+    webchatDispatch({
+      type: WebchatAction.REMOVE_WEBVIEW,
+    })
+
+  const updateSession = (session: Partial<Session>) => {
     webchatDispatch({
       type: WebchatAction.UPDATE_SESSION,
       payload: session,
@@ -145,7 +198,7 @@ export function useWebchat() {
       payload: toggle,
     })
 
-  const setError = (error: ErrorMessage) =>
+  const setError = (error?: ErrorMessage) =>
     webchatDispatch({
       type: WebchatAction.SET_ERROR,
       payload: error,
@@ -170,17 +223,10 @@ export function useWebchat() {
     })
   }
 
-  const setCurrentAttachment = (attachment: File) => {
+  const setCurrentAttachment = (attachment?: File) => {
     webchatDispatch({
       type: WebchatAction.SET_CURRENT_ATTACHMENT,
       payload: attachment,
-    })
-  }
-
-  const updateJwt = (jwt: string) => {
-    webchatDispatch({
-      type: WebchatAction.UPDATE_JWT,
-      payload: jwt,
     })
   }
 
@@ -197,6 +243,13 @@ export function useWebchat() {
     })
   }
 
+  const setIsInputFocused = (isInputFocused: boolean) => {
+    webchatDispatch({
+      type: WebchatAction.SET_IS_INPUT_FOCUSED,
+      payload: isInputFocused,
+    })
+  }
+
   return {
     addMessage,
     addMessageComponent,
@@ -205,6 +258,7 @@ export function useWebchat() {
     resetUnreadMessages,
     setCurrentAttachment,
     setError,
+    setIsInputFocused,
     setLastMessageVisible,
     setOnline,
     toggleCoverComponent,
@@ -213,7 +267,6 @@ export function useWebchat() {
     toggleWebchat,
     updateDevSettings,
     updateHandoff,
-    updateJwt,
     updateLastMessageDate,
     updateLastRoutePath,
     updateLatestInput,
@@ -223,7 +276,14 @@ export function useWebchat() {
     updateTheme,
     updateTyping,
     updateWebview,
-    webchatDispatch,
+    removeReplies,
+    removeWebview,
     webchatState,
+    webchatRef,
+    headerRef,
+    chatAreaRef,
+    scrollableMessagesListRef,
+    repliesRef,
+    inputPanelRef,
   }
 }

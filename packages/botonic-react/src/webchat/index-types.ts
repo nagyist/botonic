@@ -1,7 +1,8 @@
 import type { Input as CoreInput, Session as CoreSession } from '@botonic/core'
-import { RefObject } from 'react'
 
+import { Reply } from '../components'
 import { Webview } from '../components/index-types'
+import { WebchatArgs } from '../index-types'
 
 export interface WebchatStateTheme {
   headerTitle: string
@@ -11,6 +12,7 @@ export interface WebchatStateTheme {
   textPlaceholder: string
   style: {
     fontFamily: string
+    borderRadius?: string
   }
 }
 
@@ -27,13 +29,13 @@ export interface WebchatState {
   height: number
   messagesJSON: any[]
   messagesComponents: any[]
-  replies: any[]
+  replies?: (typeof Reply)[]
   latestInput: Partial<CoreInput>
   typing: boolean
   webview: Webview | null
   webviewParams: null
   session: Partial<CoreSession>
-  lastRoutePath: string | null
+  lastRoutePath?: string
   handoff: boolean
   theme: WebchatStateTheme
   themeUpdates: Partial<WebchatStateTheme>
@@ -47,18 +49,12 @@ export interface WebchatState {
   isCustomComponentRendered: boolean
   lastMessageUpdate?: string
   currentAttachment?: File
-  jwt?: string
   numUnreadMessages: number
   isLastMessageVisible: boolean
+  isInputFocused: boolean
 }
 
-// export interface WebchatProps extends WebchatArgs {
-export interface WebchatProps {
-  ref: RefObject<any>
-  onConnectionRegained?: () => Promise<void>
-}
-
-export interface WebchatDevProps extends WebchatProps {
+export interface WebchatDevProps extends WebchatArgs {
   initialDevSettings?: {
     keepSessionOnReload?: boolean
     showSessionView?: boolean

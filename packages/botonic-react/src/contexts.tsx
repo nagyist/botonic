@@ -26,22 +26,19 @@ export interface CloseWebviewOptions {
 }
 
 export const WebviewRequestContext = createContext<{
-  closeWebview: (options?: CloseWebviewOptions) => undefined
-  getString: (stringId: string) => string
+  closeWebview: (options?: CloseWebviewOptions) => Promise<void>
+  getString?: (stringId: string) => string
   params: Record<string, any>
-  session: CoreSession
+  session: Partial<CoreSession>
 }>({
-  closeWebview: () => undefined,
-  getString: () => '',
+  closeWebview: async () => undefined,
+  getString: undefined,
   params: {} as Record<string, any>,
-  session: {} as CoreSession,
+  session: {} as Partial<CoreSession>,
 })
 
 export const WebchatContext = createContext<WebchatContextProps>({
   addMessage: () => {
-    return
-  },
-  closeWebview: () => {
     return
   },
   getThemeProperty: () => {
@@ -56,23 +53,35 @@ export const WebchatContext = createContext<WebchatContextProps>({
   resetUnreadMessages: () => {
     return
   },
+  setIsInputFocused: () => {
+    return
+  },
   setLastMessageVisible: () => {
     return
   },
-  sendAttachment: () => {
+  sendAttachment: async () => {
     return
   },
-  sendInput: () => {
+  sendInput: async () => {
     return
   },
-  sendPayload: () => {
+  sendPayload: async () => {
     return
   },
-  sendText: () => {
+  sendText: async () => {
     return
   },
   theme: {},
+  toggleCoverComponent: () => {
+    return
+  },
   toggleWebchat: () => {
+    return
+  },
+  toggleEmojiPicker: () => {
+    return
+  },
+  togglePersistentMenu: () => {
     return
   },
   updateLatestInput: () => {
@@ -91,4 +100,13 @@ export const WebchatContext = createContext<WebchatContextProps>({
     return
   },
   webchatState: webchatInitialState,
+  trackEvent: async () => {
+    return
+  },
+  webchatRef: { current: null },
+  chatAreaRef: { current: null },
+  inputPanelRef: { current: null },
+  headerRef: { current: null },
+  scrollableMessagesListRef: { current: null },
+  repliesRef: { current: null },
 })
