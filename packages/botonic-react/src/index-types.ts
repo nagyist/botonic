@@ -5,6 +5,7 @@ import {
   Plugin as CorePlugin,
   Route as CoreRoute,
   Routes as CoreRoutes,
+  ServerConfig,
   Session as CoreSession,
   SessionUser as CoreSessionUser,
 } from '@botonic/core'
@@ -13,14 +14,16 @@ import React from 'react'
 import {
   BlockInputOption,
   ButtonProps,
-  CoverComponentOptions,
-  PersistentMenuTheme,
   ReplyProps,
-  ThemeProps,
   WebchatSettingsProps,
-  Webview,
-} from './components/index-types'
-import { WebchatState } from './webchat/index-types'
+} from './components'
+import { CloseWebviewOptions } from './contexts'
+import { UseWebchat } from './webchat/context/use-webchat'
+import {
+  CoverComponentOptions,
+  PersistentMenuOptionsTheme,
+  ThemeProps,
+} from './webchat/theme/types'
 import { WebchatApp } from './webchat-app'
 
 /**
@@ -51,83 +54,99 @@ export interface RequestContextInterface extends ActionRequest {
   setLocale: (locale: string) => string
 }
 
-export interface CustomMessageType {
-  customTypeName: string
+export interface WebchatRef {
+  addBotResponse: ({
+    response,
+    session,
+    lastRoutePath,
+  }: AddBotResponseArgs) => void
+  setTyping: (typing: boolean) => void
+  addUserMessage: (message: any) => Promise<void>
+  updateUser: (userToUpdate: any) => void
+  openWebchat: () => void
+  closeWebchat: () => void
+  toggleWebchat: () => void
+  openCoverComponent: () => void
+  closeCoverComponent: () => void
+  toggleCoverComponent: () => void
+  renderCustomComponent: (customComponent: any) => void
+  unmountCustomComponent: () => void
+  isOnline: () => boolean
+  setOnline: (online: boolean) => void
+  getMessages: () => { id: string; ack: number; unsentInput: CoreInput }[] // TODO: define MessagesJSON
+  clearMessages: () => void
+  getLastMessageUpdate: () => string | undefined
+  updateMessageInfo: (msgId: string, messageInfo: any) => void
+  updateWebchatSettings: (settings: WebchatSettingsProps) => void
+  closeWebview: (options?: CloseWebviewOptions) => Promise<void>
 }
 
-// TODO: Reuse types to be reused in respective components
-// export class WebchatApp {
-//   constructor(options: WebchatAppArgs)
-//   addBotMessage(message: WebchatMessage): void
-//   addBotText(text: string): void
-//   addUserMessage(message: WebchatMessage): void
-//   addUserPayload(payload: string): void
-//   addUserText(text: string): void
-//   clearMessages(): void
-//   close(): void
-//   closeCoverComponent(): void
-//   destroy(): void
-//   getComponent(
-//     host: HTMLElement,
-//     optionsAtRuntime?: WebchatAppArgs
-//   ): React.ForwardRefExoticComponent<any>
-//   getLastMessageUpdate(): string
-//   getMessages(): WebchatMessage[]
-//   getVisibility(): Promise<boolean>
-//   isWebchatVisible({ appId: string }): Promise<boolean>
-//   onCloseWebchat(args: any): void
-//   onInitWebchat(args: any): void
-//   onOpenWebchat(args: any): void
-//   onServiceEvent(event: Event): void
-//   onStateChange(args: OnStateChangeArgs): void
-//   onUserInput(args: OnUserInputArgs): Promise<void>
-//   open(): void
-//   openCoverComponent(): void
-//   render(dest?: HTMLElement, optionsAtRuntime?: WebchatAppArgs): void
-//   resendUnsentInputs(): Promise<void>
-//   resolveWebchatVisibility(optionsAtRuntime: {
-//     appId: string
-//     visibility: () => boolean
-//   }): Promise<boolean>
-//   setTyping(enable: boolean): void
-//   toggle(): void
-//   toggleCoverComponent(): void
-//   updateMessageInfo(msgId: string, messageInfo: MessageInfo): void
-//   updateLastMessageDate(date: string): void
-//   updateUser(user: Partial<CoreSessionUser>): void
-//   updateWebchatSettings(settings: WebchatSettingsProps): void
-//   renderCustomComponent(customComponent: React.ReactNode): void
-//   unmountCustomComponent(): void
-// }
+interface AddBotResponseArgs {
+  response: any
+  session?: any
+  lastRoutePath?: any
+}
 
 export interface WebchatArgs {
-  blockInputs?: BlockInputOption[]
+  theme?: ThemeProps
+  persistentMenu?: PersistentMenuOptionsTheme
   coverComponent?: CoverComponentOptions
+  blockInputs?: BlockInputOption[]
+  enableEmojiPicker?: boolean
+  enableAttachments?: boolean
+  enableUserInput?: boolean
+  enableAnimations?: boolean
+  hostId?: string
+  shadowDOM?: boolean | (() => boolean)
   defaultDelay?: number
   defaultTyping?: number
-  enableAnimations?: boolean
-  enableAttachments?: boolean
-  enableEmojiPicker?: boolean
-  enableUserInput?: boolean
-  shadowDOM?: boolean | (() => boolean)
-  hostId?: string
-  getString?: (stringId: string, session: CoreSession) => string
-  onClose?: (app: WebchatApp, args: any) => void
-  onInit?: (app: WebchatApp, args: any) => void
-  onMessage?: (app: WebchatApp, message: WebchatMessage) => void
-  onOpen?: (app: WebchatApp, args: any) => void
-  onConnectionChange?: (app: WebchatApp, isOnline: boolean) => void
-  persistentMenu?: PersistentMenuTheme
   storage?: Storage | null
-  storageKey?: any
-  theme?: ThemeProps
+  storageKey?: string
+  onInit?: (app: WebchatApp, args: any) => void
+  onOpen?: (app: WebchatApp, args: any) => void
+  onClose?: (app: WebchatApp, args: any) => void
+  onMessage?: (app: WebchatApp, message: WebchatMessage) => void
+  onTrackEvent?: TrackEventFunction
+  onConnectionChange?: (app: WebchatApp, isOnline: boolean) => void
+  appId?: string
+  visibility?: boolean | (() => boolean) | 'dynamic'
+  server?: ServerConfig
 }
 
-// export interface WebchatAppArgs extends WebchatArgs {
-export interface WebchatAppArgs {
-  appId?: string
-  visibility?: () => boolean
+export interface WebchatProps {
+  webchatHooks?: UseWebchat
+  initialSession?: any
+  initialDevSettings?: any
+  onStateChange: (args: OnStateChangeArgs) => void
+
+  shadowDOM?: any
+  theme?: ThemeProps
+  persistentMenu?: PersistentMenuOptionsTheme
+  coverComponent?: CoverComponentOptions
+  blockInputs?: BlockInputOption[]
+  enableEmojiPicker?: boolean
+  enableAttachments?: boolean
+  enableUserInput?: boolean
+  enableAnimations?: boolean
+  storage?: Storage | null
+  storageKey?: string | (() => string)
+  defaultDelay?: number
+  defaultTyping?: number
+  onInit?: (args?: any) => void
+  onOpen?: (args?: any) => void
+  onClose?: (args?: any) => void
+  onUserInput(args: OnUserInputArgs): Promise<void>
+  onTrackEvent?: TrackEventFunction
+  host?: any
+  server?: ServerConfig
 }
+
+export type EventArgs = { [key: string]: any }
+export type TrackEventFunction = (
+  request: ActionRequest,
+  eventName: string,
+  args?: EventArgs
+) => Promise<void>
 
 export enum SENDERS {
   bot = 'bot',
@@ -135,23 +154,28 @@ export enum SENDERS {
   agent = 'agent',
 }
 
+export enum Typing {
+  On = 'typing_on',
+  Off = 'typing_off',
+}
+
 export interface WebchatMessage {
   ack: 0 | 1
   blob: boolean
   buttons: ButtonProps[]
-  children: any
-  data: any
+  children: any // messageJSON don't have children prop
+  data: any // if message.type === 'text' => message.data = {text: string}
   delay: number
   display: boolean
-  enabletimestamps: boolean
+  enabletimestamps?: boolean
   id: string
-  imagestyle: any
+  imagestyle?: any
   isUnread: boolean
   json: any
-  markdown: boolean
+  markdown: boolean // 0 | 1
   replies: ReplyProps[]
   sentBy: SENDERS
-  style: any
+  style?: any
   timestamp: string
   type: CoreInputType
   typing: number
@@ -161,7 +185,7 @@ export interface OnUserInputArgs {
   input: CoreInput
   lastRoutePath?: string
   session?: CoreSession
-  user: CoreSessionUser
+  user?: CoreSessionUser
 }
 
 export interface OnStateChangeArgs {
@@ -170,41 +194,22 @@ export interface OnStateChangeArgs {
 }
 
 export interface MessageInfo {
-  data: any | 'typing_on'
+  data: any | Typing.On
   id: string
   type: 'update_webchat_settings' | 'sender_action'
 }
 
-export interface Event {
-  action?: 'update_message_info'
+export type Event = ConnectionChangeEvent | UpdateMessageInfoEvent
+
+interface ConnectionChangeEvent {
+  action: 'connectionChange'
+  online: boolean
   isError?: boolean
   message?: MessageInfo
 }
 
-export interface WebchatContextProps {
-  addMessage: (message: WebchatMessage) => void
-  closeWebview: () => void
-  getThemeProperty: (property: string, defaultValue?: string | boolean) => any
-  openWebview: (webviewComponent: Webview) => void
-  resetUnreadMessages: () => void
-  resolveCase: () => void
-  sendAttachment: (attachment: File) => void
-  sendInput: (input: CoreInput) => void
-  sendPayload: (payload: string) => void
-  sendText: (text: string, payload?: string) => void
-  setLastMessageVisible: (isLastMessageVisible: boolean) => void
-  theme: ThemeProps
-  toggleWebchat: (toggle: boolean) => void
-  updateLatestInput: (input: CoreInput) => void
-  updateMessage: (message: WebchatMessage) => void
-  updateReplies: (replies: boolean) => void
-  updateUser: (user: Partial<CoreSessionUser>) => void
-  updateWebchatDevSettings: (settings: WebchatSettingsProps) => void
-  webchatState: WebchatState
+interface UpdateMessageInfoEvent {
+  action: 'update_message_info'
+  message: MessageInfo
+  isError?: boolean
 }
-
-// export class DevApp extends WebchatApp {
-//   constructor(args: WebchatAppArgs)
-//   onUserInput(args: OnUserInputArgs): Promise<void>
-//   render(dest: HTMLElement, optionsAtRuntime: WebchatAppArgs): void
-// }

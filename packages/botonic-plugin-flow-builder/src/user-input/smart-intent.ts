@@ -3,6 +3,7 @@ import axios from 'axios'
 
 import { FlowBuilderApi } from '../api'
 import { HtSmartIntentNode } from '../content-fields/hubtype-fields/smart-intent'
+import { getFlowBuilderPlugin } from '../helpers'
 import { EventAction, trackEvent } from '../tracking'
 import { SmartIntentResponse } from '../types'
 
@@ -22,7 +23,8 @@ export class SmartIntentsApi {
   constructor(
     public cmsApi: FlowBuilderApi,
     public currentRequest: ActionRequest,
-    public smartIntentsConfig: SmartIntentsInferenceConfig
+    public smartIntentsConfig: SmartIntentsInferenceConfig,
+    public flowId?: string
   ) {}
 
   async getNodeByInput(): Promise<HtSmartIntentNode | undefined> {
@@ -34,7 +36,7 @@ export class SmartIntentsApi {
       bot_id: this.currentRequest.session.bot.id,
       text: this.currentRequest.input.data,
       num_smart_intents_to_use: this.smartIntentsConfig.numSmartIntentsToUse,
-      use_latest: this.smartIntentsConfig.useLatest,
+      use_latest: this.resolveUseLatest(),
     }
 
     try {
@@ -44,10 +46,14 @@ export class SmartIntentsApi {
           smartIntentNode.content.title === response.data.smart_intent_title
       )
       if (smartIntentNode) {
-        trackEvent(this.currentRequest, EventAction.IntentSmart, {
+        await trackEvent(this.currentRequest, EventAction.IntentSmart, {
           nluIntentSmartTitle: response.data.smart_intent_title,
           nluIntentSmartNumUsed: response.data.smart_intents_used.length,
           nluIntentSmartMessageId: this.currentRequest.input.message_id,
+          userInput: this.currentRequest.input.data,
+          flowThreadId: this.currentRequest.session.flow_thread_id,
+          flowId: smartIntentNode.flow_id,
+          flowNodeId: smartIntentNode.id,
         })
         return smartIntentNode
       }
@@ -57,14 +63,22 @@ export class SmartIntentsApi {
     return undefined
   }
 
+  private resolveUseLatest(): boolean {
+    if (this.currentRequest.session.is_test_integration) return false
+    return this.smartIntentsConfig.useLatest
+  }
+
   private async getInference(
     inferenceParams: SmartIntentsInferenceParams
   ): Promise<SmartIntentResponse> {
+    const pluginFlowBuilder = getFlowBuilderPlugin(this.currentRequest.plugins)
+    const token = pluginFlowBuilder.getAccessToken(this.currentRequest.session)
+
     return await axios({
       method: 'POST',
       url: `${process.env.HUBTYPE_API_URL}/external/v2/ai/smart_intents/inference/`,
       headers: {
-        Authorization: `Bearer ${this.currentRequest.session._access_token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       data: inferenceParams,

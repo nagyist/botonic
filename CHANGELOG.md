@@ -6,11 +6,13 @@ All notable changes to Botonic will be documented in this file.
 
 <details>
   <summary>
-    Changes that have landed in master but are not yet released.
+    Changes that have landed in master-lts but are not yet released.
     Click to see more.
   </summary>
   
-## [0.27.X] - 2024-xx-xx
+## [0.31.0] - 2024-mm-dd
+
+### Added
 
 ### Changed
 
@@ -18,7 +20,92 @@ All notable changes to Botonic will be documented in this file.
 
 </details>
 
-## [0.27.0] - tbd
+## [0.30.4] - 2024-11-11
+
+### Fixed
+
+- [@botonic/react](https://www.npmjs.com/package/@botonic/react)
+
+  - [`mixed bold and italic markdown` for whatsapp and facebook](https://github.com/hubtype/botonic/pull/2931)
+  - [`replace markdown links` for whatsapp and facebook](https://github.com/hubtype/botonic/pull/2930)
+
+- [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
+
+  - [replace `bot action node id` for payload with params in pre function](https://github.com/hubtype/botonic/pull/2929)
+
+## [0.30.0] - 2024-10-03
+
+### Added
+
+### Changed
+
+- [@botonic/cli](https://www.npmjs.com/package/@botonic/cli)
+
+  - [use new `endpoint v2 to deploy` bots](https://github.com/hubtype/botonic/pull/2884)
+
+- [@botonic/core](https://www.npmjs.com/package/@botonic/core)
+
+  - [after resolving an input the `core-bot can redirect to another action, with a maximum of 10 times`](https://github.com/hubtype/botonic/pull/2898)
+
+- [@botonic/react](https://www.npmjs.com/package/@botonic/react)
+
+  - [remove `getConfig` function](https://github.com/hubtype/botonic/pull/2902)
+  - [remove `simplebar` dependency](https://github.com/hubtype/botonic/pull/2900)
+
+- [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
+
+  - [can resolve `bot-action` nodes at any point of the flow](https://github.com/hubtype/botonic/pull/2898)
+  - [when user clicks on old button send fallback](https://github.com/hubtype/botonic/pull/2909)
+
+### Fixed
+
+- [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
+
+  - [set `bot.id and organization_id in session` in local development](https://github.com/hubtype/botonic/pull/2913)
+  - [`smart intents` work in local](https://github.com/hubtype/botonic/pull/2915)
+
+## [0.29.0] - 2024-08-13
+
+### Changed
+
+- [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
+
+  - [Get source ids from source_data node attributes to knowledge base api call](https://github.com/hubtype/botonic/pull/2881)
+
+- [@botonic/plugin-knowledge-bases](https://www.npmjs.com/package/@botonic/plugin-knowledge-bases)
+
+  - [Update inference endpoint to use source ids instead of source names](https://github.com/hubtype/botonic/pull/2880)
+
+## [0.28.0] - 2024-07-09
+
+### Added
+
+- [Project](https://github.com/hubtype/botonic)
+
+  - Added specific behavior for bots having `is_test_integration` defined.
+
+- [@botonic/react](https://www.npmjs.com/package/@botonic/react)
+
+  - [Add `onTrackEvent` function and `message feedback`](https://github.com/hubtype/botonic/pull/2859)
+
+- [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
+
+  - [Use `message feedback` in knowledge base messages](https://github.com/hubtype/botonic/pull/2859)
+  - [improve `flowbuilder webview contents`](https://github.com/hubtype/botonic/pull/2913)
+
+- [@botonic/plugin-hubtype-analytics](https://www.npmjs.com/package/@botonic/plugin-hubtype-analytics)
+
+  - [Add `knowledge base feedback event`](https://github.com/hubtype/botonic/pull/2859)
+
+### Changed
+
+- [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
+
+  - [Change `WebviewContentsContext` for `createWebviewContentsContext` to allow mapping keys to contents ids](https://github.com/hubtype/botonic/pull/2863)
+
+### Fixed
+
+## [0.27.0] - 2024-11-06
 
 ### Added
 
@@ -32,6 +119,7 @@ All notable changes to Botonic will be documented in this file.
 
   - [Remove unused code from experimental 1.0 version](https://github.com/hubtype/botonic/pull/2812)
   - [Remove types `HubtypeSession` and `SessionWithBotonicAction` all typed in `Session`](https://github.com/hubtype/botonic/pull/2812)
+  - [Add `withBotEvent` in HandoffBuilder](https://github.com/hubtype/botonic/pull/2835)
 
 - [@botonic/plugin-hubtype-babel](https://www.npmjs.com/package/@botonic/plugin-hubtype-babel)
 
@@ -44,6 +132,12 @@ All notable changes to Botonic will be documented in this file.
 - [@botonic/plugin-flow-builder](https://www.npmjs.com/package/@botonic/plugin-flow-builder)
 
   - [Modified Smart Intents api request to call smart intents inference v2](https://github.com/hubtype/botonic/pull/2825)
+  - [New node/flow for knowledge base](https://github.com/hubtype/botonic/pull/2847)
+  - [Use events v2](https://github.com/hubtype/botonic/pull/2827)
+
+- [@botonic/plugin-hubtype-analytics](https://www.npmjs.com/package/@botonic/plugin-hubtype-analytics)
+
+  - [Change events to use new endpoint and format v2](https://github.com/hubtype/botonic/pull/2827)
 
 ### Fixed
 
@@ -1072,3 +1166,4 @@ Currently we are working on Botonic 1.0 which will come with several improvement
 [0.19.0]: https://github.com/hubtype/botonic/releases/tag/v0.19.0
 [0.20.0]: https://github.com/hubtype/botonic/releases/tag/v0.20.0
 [0.21.0]: https://github.com/hubtype/botonic/releases/tag/v0.21.0
+[0.30.0]: https://github.com/hubtype/botonic/releases/tag/v0.30.0

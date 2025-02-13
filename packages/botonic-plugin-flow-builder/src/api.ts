@@ -1,11 +1,7 @@
 import { Input, PluginPreRequest } from '@botonic/core'
 import axios from 'axios'
 
-import {
-  BOT_ACTION_PAYLOAD_PREFIX,
-  KNOWLEDGE_BASE_FLOW_NAME,
-  SEPARATOR,
-} from './constants'
+import { KNOWLEDGE_BASE_FLOW_NAME, SEPARATOR, UUID_REGEXP } from './constants'
 import {
   HtBotActionNode,
   HtFallbackNode,
@@ -21,10 +17,11 @@ import {
   HtPayloadNode,
 } from './content-fields/hubtype-fields'
 import { HtSmartIntentNode } from './content-fields/hubtype-fields/smart-intent'
-import { FlowBuilderApiOptions } from './types'
+import { FlowBuilderApiOptions, ProcessEnvNodeEnvs } from './types'
 
 export class FlowBuilderApi {
   url: string
+  flowUrl: string
   flow: HtFlowBuilderData
   request: PluginPreRequest
 
@@ -34,17 +31,34 @@ export class FlowBuilderApi {
     const newApi = new FlowBuilderApi()
 
     newApi.url = options.url
-    newApi.flow = options.flow ?? (await newApi.getFlow(options.accessToken))
     newApi.request = options.request
-
+    // TODO: Refactor later to combine logic from `FlowBuilderApi.create`, `resolveFlowUrl` and `getAccessToken` to be in one place
+    if (process.env.NODE_ENV === ProcessEnvNodeEnvs.DEVELOPMENT) {
+      await newApi.updateSessionWithUserInfo(options.accessToken)
+    }
+    const updatedRequest = newApi.request
+    newApi.flowUrl = options.flowUrl.replace(
+      '{bot_id}',
+      updatedRequest.session.bot.id
+    )
+    newApi.flow = options.flow ?? (await newApi.getFlow(options.accessToken))
     return newApi
   }
 
   private async getFlow(token: string): Promise<HtFlowBuilderData> {
-    const { data } = await axios.get(this.url, {
+    const { data } = await axios.get(this.flowUrl, {
       headers: { Authorization: `Bearer ${token}` },
     })
     return data as HtFlowBuilderData
+  }
+
+  private async updateSessionWithUserInfo(token: string) {
+    const url = `${this.url}/v1/flow_builder/user_info/`
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    this.request.session.organization_id = response.data.organization_id
+    this.request.session.bot.id = response.data.bot_id
   }
 
   getNodeByFlowId(id: string): HtNodeWithContent {
@@ -55,8 +69,8 @@ export class FlowBuilderApi {
 
   getNodeById<T extends HtNodeComponent>(id: string): T {
     const node = this.flow.nodes.find(node => node.id === id)
-    if (!node) throw Error(`Node with id: '${id}' not found`)
-    if (node.type === HtNodeWithoutContentType.GO_TO_FLOW) {
+    if (!node) console.error(`Node with id: '${id}' not found`)
+    if (node?.type === HtNodeWithoutContentType.GO_TO_FLOW) {
       return this.getNodeByFlowId(node.content.flow_id) as T
     }
     return node as T
@@ -165,11 +179,19 @@ export class FlowBuilderApi {
       return undefined
     }
 
-    if (target.type === HtNodeWithoutContentType.BOT_ACTION) {
-      return `${BOT_ACTION_PAYLOAD_PREFIX}${target.id}`
-    }
-
     return target.id
+  }
+
+  isBotAction(id: string): boolean {
+    if (!this.isUUID(id)) {
+      return false
+    }
+    const node = this.getNodeById(id)
+    return node?.type === HtNodeWithContentType.BOT_ACTION
+  }
+
+  private isUUID(str: string): boolean {
+    return UUID_REGEXP.test(str)
   }
 
   createPayloadWithParams(botActionNode: HtBotActionNode): string {

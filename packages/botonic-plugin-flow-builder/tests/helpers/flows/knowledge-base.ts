@@ -258,6 +258,7 @@ export const knowledgeBaseTestFlow = {
         ],
         payload: [],
         has_auto_assign: false,
+        has_initial_queue_position_enabled: false,
       },
     },
     {
@@ -617,7 +618,9 @@ export const knowledgeBaseTestFlow = {
       flow_id: '4c8acc81-accd-529e-8bb6-d17f4cafafea',
       type: 'knowledge-base',
       content: {
-        sources: ['Flow Builder - No images.pdf'],
+        sources_data: [
+          { id: 'sourceId1', name: 'Flow Builder - No images.pdf' },
+        ],
       },
     },
     {
@@ -773,7 +776,7 @@ export const knowledgeBaseTestFlow = {
       content: {
         text: [
           {
-            message: 'FollowUp Knowledge base ',
+            message: 'FollowUp Knowledge base',
             locale: 'es',
           },
         ],

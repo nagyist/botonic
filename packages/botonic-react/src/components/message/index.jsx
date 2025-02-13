@@ -1,17 +1,19 @@
 import { INPUT, isBrowser } from '@botonic/core'
 import React, { useContext, useEffect, useState } from 'react'
-import Fade from 'react-reveal/Fade'
-import { v4 as uuidv4 } from 'uuid'
+import { v7 as uuidv7 } from 'uuid'
 
 import { COLORS, WEBCHAT } from '../../constants'
-import { RequestContext, WebchatContext } from '../../contexts'
+import { RequestContext } from '../../contexts'
 import { SENDERS } from '../../index-types'
+import { Fade } from '../../shared/styles'
 import { isDev } from '../../util/environment'
 import { ConditionalWrapper, renderComponent } from '../../util/react'
+import { WebchatContext } from '../../webchat/context'
 import { Button } from '../button'
 import { ButtonsDisabler } from '../buttons-disabler'
 import { getMarkdownStyle, renderLinks, renderMarkdown } from '../markdown'
 import { Reply } from '../reply'
+import { MessageFooter } from './message-footer'
 import { MessageImage } from './message-image'
 import {
   BlobContainer,
@@ -20,7 +22,7 @@ import {
   BlobTickContainer,
   MessageContainer,
 } from './styles'
-import { MessageTimestamp, resolveMessageTimestamps } from './timestamps'
+import { resolveMessageTimestamps } from './timestamps'
 
 export const Message = props => {
   const { defaultTyping, defaultDelay } = useContext(RequestContext)
@@ -36,6 +38,9 @@ export const Message = props => {
     style,
     imagestyle = props.imagestyle || props.imageStyle,
     isUnread = true,
+    feedbackEnabled,
+    inferenceId,
+    botInteractionId,
     ...otherProps
   } = props
 
@@ -45,7 +50,7 @@ export const Message = props => {
   const { webchatState, addMessage, updateReplies, getThemeProperty } =
     useContext(WebchatContext)
   const [state, setState] = useState({
-    id: props.id || uuidv4(),
+    id: props.id || uuidv7(),
   })
 
   const [disabled, setDisabled] = useState(false)
@@ -67,8 +72,10 @@ export const Message = props => {
       typeof e === 'string' ? renderLinks(e) : e
     )
 
-  const { timestampsEnabled, getFormattedTimestamp, timestampStyle } =
-    resolveMessageTimestamps(getThemeProperty, enabletimestamps)
+  const { timestampsEnabled, getFormattedTimestamp } = resolveMessageTimestamps(
+    getThemeProperty,
+    enabletimestamps
+  )
 
   const getEnvAck = () => {
     if (isDev) return 1
@@ -111,6 +118,9 @@ export const Message = props => {
         customTypeName: decomposedChildren.customTypeName,
         ack: ack,
         isUnread: isUnread === 1 || isUnread === true,
+        feedbackEnabled,
+        inferenceId,
+        botInteractionId,
       }
       addMessage(message)
     }
@@ -255,13 +265,16 @@ export const Message = props => {
               {Boolean(blob) && hasBlobTick() && getBlobTick(5)}
             </BlobContainer>
           </MessageContainer>
-          {timestampsEnabled && (
-            <MessageTimestamp
+          {timestampsEnabled || feedbackEnabled ? (
+            <MessageFooter
+              enabletimestamps={timestampsEnabled}
+              messageJSON={messageJSON}
               sentBy={sentBy}
-              style={timestampStyle}
-              timestamp={messageJSON.timestamp}
+              feedbackEnabled={feedbackEnabled}
+              inferenceId={inferenceId}
+              botInteractionId={botInteractionId}
             />
-          )}
+          ) : null}
         </>
       </ConditionalWrapper>
     )

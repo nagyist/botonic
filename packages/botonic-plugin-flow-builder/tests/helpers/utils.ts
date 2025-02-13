@@ -11,24 +11,28 @@ import { ActionRequest } from '@botonic/react'
 import BotonicPluginFlowBuilder, {
   FlowBuilderAction,
   FlowBuilderActionProps,
+  FlowContent,
 } from '../../src'
-import { KnowledgeBaseFunction } from '../../src/types'
+import { KnowledgeBaseFunction, TrackEventFunction } from '../../src/types'
 
 interface FlowBuilderOptions {
   flow: any
   locale?: string
+  trackEvent?: TrackEventFunction
   getKnowledgeBaseResponse?: KnowledgeBaseFunction
 }
 
 export function createFlowBuilderPlugin({
   flow,
   locale = 'en',
+  trackEvent,
   getKnowledgeBaseResponse,
 }: FlowBuilderOptions) {
   const flowBuilderPlugin = new BotonicPluginFlowBuilder({
     flow,
     getLocale: () => locale,
     getAccessToken: () => 'fake_token',
+    trackEvent,
     getKnowledgeBaseResponse,
   })
 
@@ -43,7 +47,7 @@ export function createFlowBuilderPlugin({
 }
 
 interface RequestArgs {
-  input: Input
+  input: Omit<Input, 'bot_interaction_id' | 'message_id'>
   plugins?: ResolvedPlugins
   provider?: ProviderType
   isFirstInteraction?: boolean
@@ -67,20 +71,16 @@ export function createRequest({
       __retries: 0,
       _access_token: 'fake_access_token',
       _hubtype_api: 'https://api.hubtype.com',
+      is_test_integration: false,
+      flow_thread_id: 'testFlowThreadId',
     },
-    input,
+    input: {
+      bot_interaction_id: 'testInteractionId',
+      message_id: 'testMessageId',
+      ...input,
+    },
     lastRoutePath: '',
     plugins,
-  }
-}
-
-export function getActionRequest(request: PluginPreRequest): ActionRequest {
-  return {
-    ...request,
-    lastRoutePath: 'flow-builder-action',
-    defaultDelay: 0,
-    defaultTyping: 0,
-    params: {},
   }
 }
 
@@ -93,16 +93,29 @@ export async function getContentsAfterPreAndBotonicInit(
   return await FlowBuilderAction.botonicInit(actionRequest)
 }
 
+function getActionRequest(request: PluginPreRequest): ActionRequest {
+  return {
+    ...request,
+    lastRoutePath: 'flow-builder-action',
+    defaultDelay: 0,
+    defaultTyping: 0,
+    params: {},
+  }
+}
 interface FlowBuilderPluginAndGetContentsArgs {
   flowBuilderOptions: FlowBuilderOptions
   requestArgs: RequestArgs
 }
 
-export function createFlowBuilderPluginAndGetContents({
+export async function createFlowBuilderPluginAndGetContents({
   flowBuilderOptions,
   requestArgs,
-}: FlowBuilderPluginAndGetContentsArgs): Promise<FlowBuilderActionProps> {
+}: FlowBuilderPluginAndGetContentsArgs): Promise<{
+  contents: FlowContent[]
+  request: PluginPreRequest
+}> {
   const flowBuilderPlugin = createFlowBuilderPlugin(flowBuilderOptions)
+
   const request = createRequest({
     ...requestArgs,
     plugins: {
@@ -110,5 +123,11 @@ export function createFlowBuilderPluginAndGetContents({
       flowBuilderPlugin,
     },
   })
-  return getContentsAfterPreAndBotonicInit(request, flowBuilderPlugin)
+
+  const { contents } = await getContentsAfterPreAndBotonicInit(
+    request,
+    flowBuilderPlugin
+  )
+
+  return { contents, request }
 }

@@ -1,10 +1,10 @@
-import { INPUT } from '@botonic/core'
 import { ActionRequest } from '@botonic/react'
 
 import { FlowContent, FlowKnowledgeBase } from '../content-fields'
+import { HtNodeWithContent } from '../content-fields/hubtype-fields/nodes'
 import { EventAction, KnowledgebaseFailReason, trackEvent } from '../tracking'
 import { KnowledgeBaseFunction, KnowledgeBaseResponse } from '../types'
-import { getContentsByFallback } from './fallback'
+import { inputHasTextData } from '../utils'
 import { FlowBuilderContext } from './index'
 
 export async function getContentsByKnowledgeBase({
@@ -16,12 +16,7 @@ export async function getContentsByKnowledgeBase({
   const startNodeKnowledeBaseFlow = cmsApi.getStartNodeKnowledeBaseFlow()
 
   if (!startNodeKnowledeBaseFlow) {
-    return await getContentsByFallback({
-      cmsApi,
-      flowBuilderPlugin,
-      request,
-      resolvedLocale,
-    })
+    return []
   }
 
   const contents = await flowBuilderPlugin.getContentsByNode(
@@ -37,17 +32,23 @@ export async function getContentsByKnowledgeBase({
     return contents
   }
 
+  const sourceIds = knowledgeBaseContent.sourcesData.map(source => source.id)
+  const flowId = cmsApi.getNodeById<HtNodeWithContent>(
+    knowledgeBaseContent.id
+  ).flow_id
+
   if (
     flowBuilderPlugin.getKnowledgeBaseResponse &&
-    request.input.data &&
-    request.input.type === INPUT.TEXT
+    inputHasTextData(request.input) &&
+    sourceIds.length > 0
   ) {
     const contentsWithKnowledgeResponse =
       await getContentsWithKnowledgeResponse(
         flowBuilderPlugin.getKnowledgeBaseResponse,
         request,
+        contents,
         knowledgeBaseContent,
-        contents
+        flowId
       )
 
     if (contentsWithKnowledgeResponse) {
@@ -55,26 +56,28 @@ export async function getContentsByKnowledgeBase({
     }
   }
 
-  return await getContentsByFallback({
-    cmsApi,
-    flowBuilderPlugin,
-    request,
-    resolvedLocale,
-  })
+  return []
 }
 
 async function getContentsWithKnowledgeResponse(
   getKnowledgeBaseResponse: KnowledgeBaseFunction,
   request: ActionRequest,
+  contents: FlowContent[],
   knowledgeBaseContent: FlowKnowledgeBase,
-  contents: FlowContent[]
+  flowId: string
 ): Promise<FlowContent[] | undefined> {
+  const sourceIds = knowledgeBaseContent.sourcesData.map(source => source.id)
   const knowledgeBaseResponse = await getKnowledgeBaseResponse(
     request,
     request.input.data!,
-    knowledgeBaseContent.sources
+    sourceIds
   )
-  await trackKnowledgeBase(knowledgeBaseResponse, request)
+  await trackKnowledgeBase(
+    knowledgeBaseResponse,
+    request,
+    knowledgeBaseContent,
+    flowId
+  )
 
   if (
     !knowledgeBaseResponse.hasKnowledge ||
@@ -83,16 +86,17 @@ async function getContentsWithKnowledgeResponse(
     return undefined
   }
 
-  return updateContentsWithAnswer(contents, knowledgeBaseResponse.answer)
+  return updateContentsWithResponse(contents, knowledgeBaseResponse)
 }
 
-function updateContentsWithAnswer(
+function updateContentsWithResponse(
   contents: FlowContent[],
-  answer: string
+  response: KnowledgeBaseResponse
 ): FlowContent[] {
   return contents.map(content => {
     if (content instanceof FlowKnowledgeBase) {
-      content.text = answer
+      content.text = response.answer
+      content.inferenceId = response.inferenceId
     }
 
     return content
@@ -101,21 +105,24 @@ function updateContentsWithAnswer(
 
 async function trackKnowledgeBase(
   response: KnowledgeBaseResponse,
-  request: ActionRequest
+  request: ActionRequest,
+  knowledgeBaseContent: FlowKnowledgeBase,
+  flowId: string
 ) {
+  const sourceIds = knowledgeBaseContent.sourcesData.map(source => source.id)
   const knowledgebaseInferenceId = response.inferenceId
-  const knowledgebaseSourcesIds = response.sources.map(
-    source => source.knowledgeSourceId
-  )
-  const knowledgebaseChunksIds = response.sources.map(
-    source => source.knowledgeChunkId
-  )
+  const knowledgebaseSourcesIds = sourceIds
+  const knowledgebaseChunksIds = response.chunkIds
   const knowledgebaseMessageId = request.input.message_id
+  const flowThreadId = request.session.flow_thread_id
+  const flowNodeId = knowledgeBaseContent.id
 
   let knowledgebaseFailReason: KnowledgebaseFailReason | undefined
+
   if (!response.isFaithuful) {
     knowledgebaseFailReason = KnowledgebaseFailReason.Hallucination
   }
+
   if (!response.hasKnowledge) {
     knowledgebaseFailReason = KnowledgebaseFailReason.NoKnowledge
   }
@@ -126,5 +133,9 @@ async function trackKnowledgeBase(
     knowledgebaseSourcesIds,
     knowledgebaseChunksIds,
     knowledgebaseMessageId,
+    userInput: request.input.data,
+    flowThreadId,
+    flowId,
+    flowNodeId,
   })
 }

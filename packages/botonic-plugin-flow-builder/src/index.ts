@@ -1,15 +1,15 @@
-import { INPUT, Plugin, PluginPreRequest, Session } from '@botonic/core'
+import { Plugin, PluginPreRequest, Session } from '@botonic/core'
 import { ActionRequest } from '@botonic/react'
-import { v4 as uuid } from 'uuid'
+import { v7 as uuidv7 } from 'uuid'
 
 import { FlowBuilderApi } from './api'
 import {
-  BOT_ACTION_PAYLOAD_PREFIX,
   FLOW_BUILDER_API_URL_PROD,
   SEPARATOR,
   SOURCE_INFO_SEPARATOR,
 } from './constants'
 import {
+  FlowBotAction,
   FlowCarousel,
   FlowContent,
   FlowHandoff,
@@ -40,23 +40,28 @@ import {
 } from './types'
 import { getNodeByUserInput } from './user-input'
 import { SmartIntentsInferenceConfig } from './user-input/smart-intent'
-import { resolveGetAccessToken } from './utils'
+import { inputHasTextData, resolveGetAccessToken } from './utils'
+
+// TODO: Create a proper service to wrap all calls and allow api versioning
+
 export default class BotonicPluginFlowBuilder implements Plugin {
   public cmsApi: FlowBuilderApi
-  private flowUrl: string
   private flow?: HtFlowBuilderData
   private functions: Record<any, any>
   private currentRequest: PluginPreRequest
-  private getAccessToken: (session: Session) => string
+  public getAccessToken: (session: Session) => string
   public getLocale: (session: Session) => string
   public trackEvent?: TrackEventFunction
   public getKnowledgeBaseResponse?: KnowledgeBaseFunction
   public smartIntentsConfig: SmartIntentsInferenceConfig
 
+  // TODO: Rethink how we construct FlowBuilderApi to be simpler
+  public jsonVersion: FlowBuilderJSONVersion
+  public apiUrl: string
+
   constructor(readonly options: BotonicPluginFlowBuilderOptions) {
-    const apiUrl = options.apiUrl || FLOW_BUILDER_API_URL_PROD
-    const jsonVersion = options.jsonVersion || FlowBuilderJSONVersion.LATEST
-    this.flowUrl = `${apiUrl}/flow/${jsonVersion}`
+    this.apiUrl = options.apiUrl || FLOW_BUILDER_API_URL_PROD
+    this.jsonVersion = options.jsonVersion || FlowBuilderJSONVersion.LATEST
     this.flow = options.flow
     this.getLocale = options.getLocale
     this.getAccessToken = resolveGetAccessToken(options)
@@ -64,24 +69,31 @@ export default class BotonicPluginFlowBuilder implements Plugin {
     this.getKnowledgeBaseResponse = options.getKnowledgeBaseResponse
     this.smartIntentsConfig = {
       ...options?.smartIntentsConfig,
-      useLatest: jsonVersion === FlowBuilderJSONVersion.LATEST,
+      useLatest: this.jsonVersion === FlowBuilderJSONVersion.LATEST,
     }
     const customFunctions = options.customFunctions || {}
     this.functions = { ...DEFAULT_FUNCTIONS, ...customFunctions }
   }
 
+  resolveFlowUrl(request: PluginPreRequest): string {
+    if (request.session.is_test_integration) {
+      return `${this.apiUrl}/v1/bot_flows/{bot_id}/versions/${FlowBuilderJSONVersion.DRAFT}`
+    }
+    return `${this.apiUrl}/v1/bot_flows/{bot_id}/versions/${this.jsonVersion}`
+  }
+
   async pre(request: PluginPreRequest): Promise<void> {
     this.currentRequest = request
     this.cmsApi = await FlowBuilderApi.create({
-      url: this.flowUrl,
+      flowUrl: this.resolveFlowUrl(request),
+      url: this.apiUrl,
       flow: this.flow,
       accessToken: this.getAccessToken(request.session),
       request: this.currentRequest,
     })
 
     const checkUserTextInput =
-      request.input.data &&
-      request.input.type === INPUT.TEXT &&
+      inputHasTextData(request.input) &&
       !request.input.payload &&
       !request.session.is_first_interaction
 
@@ -100,26 +112,23 @@ export default class BotonicPluginFlowBuilder implements Plugin {
     this.updateRequestBeforeRoutes(request)
   }
 
-  private updateRequestBeforeRoutes(request: PluginPreRequest) {
+  private updateRequestBeforeRoutes(request: PluginPreRequest): void {
     if (request.input.payload) {
       request.input.payload = this.removeSourceSufix(request.input.payload)
 
-      if (request.input.payload.startsWith(BOT_ACTION_PAYLOAD_PREFIX)) {
-        request.input.payload = this.replaceBotActionPayload(
+      if (this.cmsApi.isBotAction(request.input.payload)) {
+        const cmsBotAction = this.cmsApi.getNodeById<HtBotActionNode>(
           request.input.payload
         )
+
+        request.input.payload =
+          this.cmsApi.createPayloadWithParams(cmsBotAction)
       }
     }
   }
 
   private removeSourceSufix(payload: string): string {
     return payload.split(SOURCE_INFO_SEPARATOR)[0]
-  }
-
-  public replaceBotActionPayload(payload: string): string {
-    const botActionId = payload.split(SEPARATOR)[1]
-    const botActionNode = this.cmsApi.getNodeById<HtBotActionNode>(botActionId)
-    return this.cmsApi.createPayloadWithParams(botActionNode)
   }
 
   async getContentsByContentID(
@@ -148,7 +157,7 @@ export default class BotonicPluginFlowBuilder implements Plugin {
   async getStartContents(locale: string): Promise<FlowContent[]> {
     const resolvedLocale = this.cmsApi.getResolvedLocale(locale)
     const startNode = this.cmsApi.getStartNode()
-    this.currentRequest.session.flow_thread_id = uuid()
+    this.currentRequest.session.flow_thread_id = uuidv7()
     return await this.getContentsByNode(startNode, resolvedLocale)
   }
 
@@ -169,8 +178,13 @@ export default class BotonicPluginFlowBuilder implements Plugin {
     if (content) {
       contents.push(content)
     }
-    // TODO: prevent infinite recursive calls
 
+    // If node is BOT_ACTION not add more contents to render, next nodes render after execute action
+    if (node.type === HtNodeWithContentType.BOT_ACTION) {
+      return contents
+    }
+
+    // TODO: prevent infinite recursive calls
     if (node.follow_up) {
       return this.getContentsById(node.follow_up.id, resolvedLocale, contents)
     }
@@ -208,6 +222,10 @@ export default class BotonicPluginFlowBuilder implements Plugin {
 
       case HtNodeWithContentType.KNOWLEDGE_BASE:
         return FlowKnowledgeBase.fromHubtypeCMS(hubtypeContent)
+
+      case HtNodeWithContentType.BOT_ACTION:
+        return FlowBotAction.fromHubtypeCMS(hubtypeContent, locale, this.cmsApi)
+
       default:
         return undefined
     }
@@ -275,8 +293,8 @@ export default class BotonicPluginFlowBuilder implements Plugin {
 }
 
 export * from './action'
-export { BOT_ACTION_PAYLOAD_PREFIX } from './constants'
 export * from './content-fields'
+export { HtBotActionNode } from './content-fields/hubtype-fields'
 export { trackFlowContent } from './tracking'
 export {
   BotonicPluginFlowBuilderOptions,

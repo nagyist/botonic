@@ -53,16 +53,10 @@ export const WEBCHAT = {
       pointerEvents: 'none',
     },
   },
-  SELECTORS: {
-    SCROLLABLE_CONTENT: '#botonic-scrollable-content',
-    SIMPLEBAR_CONTENT: '.simplebar-content',
-    SIMPLEBAR_WRAPPER: '.simplebar-content-wrapper',
-  },
   CUSTOM_PROPERTIES: {
     // General
     enableAnimations: 'animations.enable',
     markdownStyle: 'markdownStyle',
-    scrollbar: 'scrollbar',
     imagePreviewer: 'imagePreviewer',
     // Mobile
     mobileBreakpoint: 'mobileBreakpoint',
@@ -194,11 +188,4 @@ export const ROLES = {
   VIDEO_MESSAGE: 'video-message',
   DOCUMENT_MESSAGE: 'document-message',
   RAW_MESSAGE: 'raw-message',
-}
-
-export const COMPONENT_TYPE = {
-  TEXT: 'Text',
-  BUTTON: 'Button',
-  REPLY: 'Reply',
-  CAROUSEL: 'Carousel',
 }

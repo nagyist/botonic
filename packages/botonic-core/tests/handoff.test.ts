@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { PATH_PAYLOAD_IDENTIFIER } from '../src'
-import { HandOffBuilder, humanHandOff } from '../src/handoff'
+import { BotonicAction, PATH_PAYLOAD_IDENTIFIER } from '../src'
+import { HandOffBuilder, HelpdeskEvent, humanHandOff } from '../src/handoff'
 
 describe('Handoff', () => {
   test.each([
@@ -54,7 +54,7 @@ describe('Handoff', () => {
       new HandOffBuilder({}).withOnFinishPath('path1'),
     ],
     [
-      `create_case:` +
+      `${BotonicAction.CreateCase}:` +
         JSON.stringify({
           force_assign_if_not_available: true,
           agent_id: '1234',
@@ -72,7 +72,7 @@ describe('Handoff', () => {
     )
     builder.handOff()
     const expectedBotonicAction =
-      'create_case:' +
+      `${BotonicAction.CreateCase}:` +
       JSON.stringify({
         force_assign_if_not_available: true,
         auto_idle_message: 'the case is in IDLE status',
@@ -90,7 +90,7 @@ describe('Handoff', () => {
       const value = forceAssign ?? true
       builder.handOff()
       const expectedBotonicAction =
-        'create_case:' +
+        `${BotonicAction.CreateCase}:` +
         JSON.stringify({ force_assign_if_not_available: value })
       expect(builder._session._botonic_action).toEqual(expectedBotonicAction)
     }
@@ -108,7 +108,8 @@ describe('Handoff', () => {
       const params = autoAssignOnWaiting
         ? { ...defaultParams, auto_assign_on_waiting: true }
         : defaultParams
-      const expectedBotonicAction = 'create_case:' + JSON.stringify(params)
+      const expectedBotonicAction =
+        `${BotonicAction.CreateCase}:` + JSON.stringify(params)
       expect(builder._session._botonic_action).toEqual(expectedBotonicAction)
     }
   )
@@ -120,11 +121,37 @@ describe('Handoff', () => {
     })
     builder.handOff()
     const expectedBotonicAction =
-      'create_case:' +
+      `${BotonicAction.CreateCase}:` +
       JSON.stringify({
         force_assign_if_not_available: true,
         case_extra_data: { language: 'en', location: 'Spain' },
       })
+    expect(builder._session._botonic_action).toEqual(expectedBotonicAction)
+  })
+
+  test('defines create_test_integration_case_with_payload for test integrations', () => {
+    const builder = new HandOffBuilder({
+      is_test_integration: true,
+    }).withOnFinishPayload('payload1')
+    builder.handOff()
+    const expectedBotonicAction = `${BotonicAction.CreateTestCase}:payload1`
+    expect(builder._session._botonic_action).toEqual(expectedBotonicAction)
+  })
+
+  test('Create a handoff and subscribe to agent_messsage_created', () => {
+    const builder = new HandOffBuilder({})
+      .withSubscribeHelpdeskEvents([HelpdeskEvent.AgentMessageCreated])
+      .withOnFinishPayload('payload1')
+    builder.handOff()
+    const expectedBotonicAction = `${BotonicAction.CreateCase}:{"force_assign_if_not_available":true,"on_finish":"payload1","subscribe_helpdesk_events":["agent_message_created"]}`
+    expect(builder._session._botonic_action).toEqual(expectedBotonicAction)
+  })
+  test('Create a handoff and subscribe to initial_queue_position', () => {
+    const builder = new HandOffBuilder({})
+      .withSubscribeHelpdeskEvents([HelpdeskEvent.InitialQueuePosition])
+      .withOnFinishPayload('payload1')
+    builder.handOff()
+    const expectedBotonicAction = `${BotonicAction.CreateCase}:{"force_assign_if_not_available":true,"on_finish":"payload1","subscribe_helpdesk_events":["initial_queue_position"]}`
     expect(builder._session._botonic_action).toEqual(expectedBotonicAction)
   })
 })

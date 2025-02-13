@@ -1,10 +1,22 @@
 import { INPUT } from '@botonic/core'
 import React, { useContext } from 'react'
 
-import { WebchatContext } from '../contexts'
 import { renderComponent } from '../util/react'
 import { stringifyWithRegexs } from '../util/regexs'
-import { WebchatSettingsProps } from '.'
+import { WebchatContext } from '../webchat/context'
+import { PersistentMenuOptionsTheme, ThemeProps } from '../webchat/theme/types'
+import { BlockInputOption } from './index-types'
+
+export interface WebchatSettingsProps {
+  blockInputs?: BlockInputOption[]
+  enableAnimations?: boolean
+  enableAttachments?: boolean
+  enableEmojiPicker?: boolean
+  enableUserInput?: boolean
+  persistentMenu?: PersistentMenuOptionsTheme
+  theme?: ThemeProps
+  user?: { extra_data?: any }
+}
 
 export const WebchatSettings = ({
   theme,

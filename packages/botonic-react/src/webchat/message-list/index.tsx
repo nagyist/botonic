@@ -1,43 +1,75 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 
-import { ROLES, WEBCHAT } from '../../constants'
-import { WebchatContext } from '../../contexts'
-import { scrollToBottom } from '../../util'
-import { StyledScrollbar } from '../components/styled-scrollbar'
-import { TypingIndicator } from '../components/typing-indicator'
+import { ROLES } from '../../constants'
+import { WebchatContext } from '../../webchat/context'
+import { BotonicContainerId } from '../constants'
+import TypingIndicator from '../typing-indicator'
 import { IntroMessage } from './intro-message'
 import { ScrollButton } from './scroll-button'
-import { ContainerMessage } from './styles'
+import { ContainerMessage, ScrollableMessageList } from './styles'
 import { UnreadMessagesBanner } from './unread-messages-banner'
+import { useNotifications } from './use-notifications'
 
-export const WebchatMessageList = props => {
+const SCROLL_TIMEOUT = 200
+const scrollOptionsEnd: ScrollIntoViewOptions = {
+  block: 'end',
+}
+const scrollOptionsCenter: ScrollIntoViewOptions = {
+  block: 'center',
+}
+
+export const WebchatMessageList = () => {
   const {
     webchatState,
-    getThemeProperty,
     resetUnreadMessages,
     setLastMessageVisible,
+    scrollableMessagesListRef,
   } = useContext(WebchatContext)
 
-  const scrollbarOptions = {
-    ...{ enable: true, autoHide: true },
-    ...getThemeProperty(WEBCHAT.CUSTOM_PROPERTIES.scrollbar),
-  }
+  const { notificationsEnabled } = useNotifications()
 
-  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState()
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<string>()
 
   const lastMessageRef = useRef<HTMLDivElement>(null)
+  const typingRef = useRef<HTMLDivElement>(null)
+  const unreadMessagesBannerRef = useRef<HTMLDivElement>(null)
+
+  const scrollToTyping = () => {
+    setTimeout(() => {
+      typingRef.current?.scrollIntoView(scrollOptionsEnd)
+    }, SCROLL_TIMEOUT)
+  }
+
+  const scrollToLastMessage = () => {
+    setTimeout(() => {
+      lastMessageRef.current?.scrollIntoView(scrollOptionsEnd)
+    }, SCROLL_TIMEOUT)
+  }
+
+  const scrollToBanner = () => {
+    setTimeout(() => {
+      unreadMessagesBannerRef.current?.scrollIntoView(scrollOptionsCenter)
+    }, SCROLL_TIMEOUT)
+  }
 
   const handleScrollToBottom = () => {
     resetUnreadMessages()
-    scrollToBottom({ host: props.host })
+    if (webchatState.typing) {
+      scrollToTyping()
+      return
+    }
+
+    scrollToLastMessage()
   }
 
-  const showUnreadMessagesBanner = (messageComponentId: string) =>
-    firstUnreadMessageId &&
-    messageComponentId === firstUnreadMessageId &&
-    webchatState.numUnreadMessages > 0
-
-  const unreadMessagesBannerRef = useRef<HTMLDivElement>(null)
+  const showUnreadMessagesBanner = (messageComponentId: string) => {
+    return (
+      !webchatState.isInputFocused &&
+      firstUnreadMessageId &&
+      messageComponentId === firstUnreadMessageId &&
+      webchatState.numUnreadMessages > 0
+    )
+  }
 
   useEffect(() => {
     const firstUnreadMessage = webchatState.messagesComponents.find(
@@ -58,68 +90,72 @@ export const WebchatMessageList = props => {
   }, [webchatState.messagesComponents])
 
   useEffect(() => {
-    if (webchatState.isLastMessageVisible && webchatState.typing) {
-      scrollToBottom({ host: props.host })
-    }
-    if (webchatState.isLastMessageVisible) {
-      scrollToBottom({ host: props.host })
-    }
-  }, [webchatState.typing, webchatState.isLastMessageVisible])
-
-  useEffect(() => {
-    if (firstUnreadMessageId) {
-      if (unreadMessagesBannerRef.current) {
-        unreadMessagesBannerRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        })
+    if (!notificationsEnabled) {
+      if (webchatState.typing) {
+        scrollToTyping()
         return
       }
-    } else if (lastMessageRef.current) {
-      lastMessageRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'end',
-      })
-      return
+
+      scrollToLastMessage()
     }
-  }, [firstUnreadMessageId])
+  }, [webchatState.typing, webchatState.messagesComponents])
+
+  useEffect(() => {
+    if (webchatState.isWebchatOpen && notificationsEnabled) {
+      if (unreadMessagesBannerRef.current) {
+        scrollToBanner()
+        return
+      }
+
+      if (webchatState.typing) {
+        scrollToTyping()
+        return
+      }
+
+      scrollToLastMessage()
+    }
+  }, [
+    firstUnreadMessageId,
+    webchatState.isWebchatOpen,
+    webchatState.typing,
+    webchatState.messagesComponents,
+  ])
 
   const showScrollButton =
     webchatState.numUnreadMessages > 0 && !webchatState.isLastMessageVisible
 
   return (
     <>
-      <StyledScrollbar
+      <ScrollableMessageList
+        id={BotonicContainerId.ScrollableMessagesList}
+        ref={scrollableMessagesListRef}
         role={ROLES.MESSAGE_LIST}
-        // TODO: Distinguis between multiple instances of webchat, e.g. `${uniqueId}-botonic-scrollable`
-        id='botonic-scrollable-content'
-        // @ts-ignore
-        scrollbar={scrollbarOptions}
-        autoHide={scrollbarOptions.autoHide}
-        ismessagescontainer={true.toString()}
-        style={{
-          ...props.style,
-        }}
       >
         <IntroMessage />
         {webchatState.messagesComponents.map((messageComponent, index) => {
           return (
-            <ContainerMessage role={ROLES.MESSAGE} key={index}>
-              {showUnreadMessagesBanner(messageComponent.props.id) && (
-                <UnreadMessagesBanner
-                  unreadMessagesBannerRef={unreadMessagesBannerRef}
-                />
-              )}
-
+            <React.Fragment key={messageComponent.props.id}>
+              <ContainerMessage role={ROLES.MESSAGE}>
+                {showUnreadMessagesBanner(messageComponent.props.id) && (
+                  <UnreadMessagesBanner
+                    unreadMessagesBannerRef={unreadMessagesBannerRef}
+                  />
+                )}
+                {messageComponent}
+              </ContainerMessage>
               {index === webchatState.messagesComponents.length - 1 && (
-                <div ref={lastMessageRef} style={{ content: '' }}></div>
+                <div
+                  ref={lastMessageRef}
+                  style={{
+                    content: '',
+                  }}
+                ></div>
               )}
-              {messageComponent}
-            </ContainerMessage>
+            </React.Fragment>
           )
         })}
-        {webchatState.typing && <TypingIndicator />}
-      </StyledScrollbar>
+        {webchatState.typing && <TypingIndicator ref={typingRef} />}
+      </ScrollableMessageList>
       {showScrollButton && <ScrollButton handleClick={handleScrollToBottom} />}
     </>
   )

@@ -10,8 +10,8 @@ import {
   WHATSAPP_MAX_BUTTON_CHARS,
   WHATSAPP_MAX_FOOTER_CHARS,
   WHATSAPP_MAX_HEADER_CHARS,
-} from './multichannel/multichannel-utils'
-import { whatsappMarkdown } from './multichannel/whatsapp/markdown'
+} from './multichannel/whatsapp/constants'
+import { convertToMarkdownMeta } from './multichannel/whatsapp/markdown-meta'
 
 export interface WhatsappCTAUrlButtonCommonProps {
   header?: string
@@ -61,7 +61,10 @@ export const WhatsappCTAUrlButton = (props: WhatsappCTAUrlButtonProps) => {
       header: props.header
         ? truncateText(props.header, WHATSAPP_MAX_HEADER_CHARS)
         : undefined,
-      body: truncateText(whatsappMarkdown(props.body), WHATSAPP_MAX_BODY_CHARS),
+      body: truncateText(
+        convertToMarkdownMeta(props.body),
+        WHATSAPP_MAX_BODY_CHARS
+      ),
       footer: props.footer
         ? truncateText(props.footer, WHATSAPP_MAX_FOOTER_CHARS)
         : undefined,

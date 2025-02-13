@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 import { PATH_PAYLOAD_IDENTIFIER } from './constants'
-import { Session } from './models'
+import { BotonicAction, BotonicActionType, Session } from './models'
 
 const HUBTYPE_API_URL = 'https://api.hubtype.com'
 
@@ -32,6 +32,12 @@ export type HandoffExtraData = {
 interface BotEventData {
   language: string
   country: string
+}
+
+export enum HelpdeskEvent {
+  StatusChanged = 'status_changed',
+  AgentMessageCreated = 'agent_message_created',
+  InitialQueuePosition = 'initial_queue_position',
 }
 
 function contextDefaults(context: any): BackendContext {
@@ -74,6 +80,7 @@ export class HandOffBuilder {
   _shadowing: boolean
   _extraData: HandoffExtraData
   _bot_event: BotEventData
+  _subscribeHelpdeskEvents: HelpdeskEvent[]
 
   constructor(session: Session) {
     this._session = session
@@ -144,6 +151,11 @@ export class HandOffBuilder {
     return this
   }
 
+  withSubscribeHelpdeskEvents(events: HelpdeskEvent[]): this {
+    this._subscribeHelpdeskEvents = events
+    return this
+  }
+
   async handOff(): Promise<void> {
     return _humanHandOff(
       this._session,
@@ -158,7 +170,8 @@ export class HandOffBuilder {
       this._autoIdleMessage,
       this._shadowing,
       this._extraData,
-      this._bot_event
+      this._bot_event,
+      this._subscribeHelpdeskEvents
     )
   }
 }
@@ -183,7 +196,7 @@ export async function humanHandOff(session, queueNameOrId = '', onFinish) {
   return builder.handOff()
 }
 
-interface HubtypeHandoffParams {
+export interface HubtypeHandoffParams {
   queue?: string
   agent_email?: string
   agent_id?: string
@@ -196,6 +209,7 @@ interface HubtypeHandoffParams {
   on_finish?: string
   case_extra_data?: HandoffExtraData
   bot_event?: BotEventData
+  subscribe_helpdesk_events?: HelpdeskEvent[]
 }
 async function _humanHandOff(
   session: Session,
@@ -210,7 +224,8 @@ async function _humanHandOff(
   autoIdleMessage = '',
   shadowing = false,
   extraData: HandoffExtraData | undefined = undefined,
-  botEvent: BotEventData
+  botEvent: BotEventData,
+  subscribeHelpdeskEvents: HelpdeskEvent[] = []
 ) {
   const params: HubtypeHandoffParams = {}
 
@@ -249,7 +264,14 @@ async function _humanHandOff(
   if (botEvent) {
     params.bot_event = botEvent
   }
-  session._botonic_action = `create_case:${JSON.stringify(params)}`
+  if (subscribeHelpdeskEvents.length > 0) {
+    params.subscribe_helpdesk_events = subscribeHelpdeskEvents
+  }
+  if (!session.is_test_integration) {
+    session._botonic_action = `${BotonicAction.CreateCase}:${JSON.stringify(params)}`
+  } else {
+    session._botonic_action = `${BotonicAction.CreateTestCase}:${params.on_finish || ''}`
+  }
 }
 
 export async function storeCaseRating(
@@ -257,6 +279,9 @@ export async function storeCaseRating(
   rating: number,
   context: any = {}
 ): Promise<{ status: string }> {
+  if (session.is_test_integration) {
+    return Promise.resolve({ status: 'ok' })
+  }
   const baseUrl = session._hubtype_api || HUBTYPE_API_URL
   const chatId = session.user.id
   context = contextDefaults(context)
@@ -323,11 +348,11 @@ export function cancelHandoff(
   session: Session,
   typification: string | null = null
 ): void {
-  let action = 'discard_case'
+  let action: BotonicActionType = BotonicAction.DiscardCase
   if (typification) action = `${action}:${JSON.stringify({ typification })}`
   session._botonic_action = action
 }
 
 export function deleteUser(session: Session): void {
-  session._botonic_action = `delete_user`
+  session._botonic_action = BotonicAction.DeleteUser
 }

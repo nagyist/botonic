@@ -6,6 +6,7 @@ describe('Create fallback events', () => {
   test('The first fallback event is created', () => {
     const htEvent = createHtEvent(requestData, {
       action: EventAction.Fallback,
+      userInput: 'userInputTest',
       fallbackOut: 1,
       fallbackMessageId: 'fallbackMessageIdTest',
     })
@@ -16,8 +17,10 @@ describe('Create fallback events', () => {
       chat_country: 'ES',
       format_version: 2,
       action: EventAction.Fallback,
+      user_input: 'userInputTest',
       fallback_out: 1,
       fallback_message_id: 'fallbackMessageIdTest',
+      bot_interaction_id: 'testInteractionId',
       type: EventType.BotEvent,
     })
   })
@@ -25,6 +28,7 @@ describe('Create fallback events', () => {
   test('The second fallback event is created', () => {
     const htEvent = createHtEvent(requestData, {
       action: EventAction.Fallback,
+      userInput: 'userInputTest',
       fallbackOut: 2,
       fallbackMessageId: 'fallbackMessageIdTest',
     })
@@ -35,8 +39,10 @@ describe('Create fallback events', () => {
       chat_country: 'ES',
       format_version: 2,
       action: EventAction.Fallback,
+      user_input: 'userInputTest',
       fallback_out: 2,
       fallback_message_id: 'fallbackMessageIdTest',
+      bot_interaction_id: 'testInteractionId',
       type: EventType.BotEvent,
     })
   })
@@ -44,6 +50,7 @@ describe('Create fallback events', () => {
   test('The third fallback event is created', () => {
     const htEvent = createHtEvent(requestData, {
       action: EventAction.Fallback,
+      userInput: 'userInputTest',
       fallbackOut: 1,
       fallbackMessageId: 'fallbackMessageIdTest',
     })
@@ -54,8 +61,10 @@ describe('Create fallback events', () => {
       chat_country: 'ES',
       format_version: 2,
       action: EventAction.Fallback,
+      user_input: 'userInputTest',
       fallback_out: 1,
       fallback_message_id: 'fallbackMessageIdTest',
+      bot_interaction_id: 'testInteractionId',
       type: EventType.BotEvent,
     })
   })

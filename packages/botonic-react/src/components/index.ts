@@ -4,6 +4,7 @@ export { Carousel } from './carousel'
 export { customMessage } from './custom-message'
 export { Document } from './document'
 export { Element } from './element'
+export { Handoff } from './handoff'
 export { Image } from './image'
 export * from './index-types'
 export { Location } from './location'
@@ -18,15 +19,35 @@ export { Subtitle } from './subtitle'
 export { Text } from './text'
 export { Title } from './title'
 export { Video } from './video'
-export { WebchatSettings } from './webchat-settings'
+export {
+  normalizeWebchatSettings,
+  WebchatSettings,
+  WebchatSettingsProps,
+} from './webchat-settings'
 export {
   WhatsappButtonList,
   WhatsappButtonListProps,
   WhatsappButtonListRowProps,
   WhatsappButtonListSectionProps,
 } from './whatsapp-button-list'
+export { WhatsappCatalog, WhatsappCatalogProps } from './whatsapp-catalog'
 export {
   WhatsappCTAUrlButton,
   WhatsappCTAUrlButtonProps,
 } from './whatsapp-cta-url-button'
+export {
+  WhatsappMediaCarousel,
+  WhatsappMediaCarouselProps,
+} from './whatsapp-media-carousel'
+export { WhatsappProduct } from './whatsapp-product'
+export {
+  WhatsappProductCarousel,
+  WhatsappProductCarouselProps,
+} from './whatsapp-product-carousel'
+export {
+  ProductItem,
+  WhatsappProductList,
+  WhatsappProductListProps,
+  WhatsappProductListSection,
+} from './whatsapp-product-list'
 export { WhatsappTemplate } from './whatsapp-template'

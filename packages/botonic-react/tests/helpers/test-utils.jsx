@@ -1,10 +1,10 @@
-import { renderHook } from '@testing-library/react-hooks'
+import { renderHook } from '@testing-library/react'
 import * as React from 'react'
 import TestRenderer from 'react-test-renderer'
 
 import { MultichannelContext } from '../../src/components/multichannel/multichannel-context'
 import { RequestContext } from '../../src/contexts'
-import { useWebchat } from '../../src/webchat/hooks'
+import { useWebchat } from '../../src/webchat/context/use-webchat'
 
 /**
  *

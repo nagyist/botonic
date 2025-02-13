@@ -1,8 +1,7 @@
 import { Input as CoreInput, Session as CoreSession } from '@botonic/core'
 import { createContext } from 'react'
 
-import { ActionRequest, WebchatContextProps } from './index-types'
-import { webchatInitialState } from './webchat/hooks'
+import { ActionRequest } from './index-types'
 
 export const RequestContext = createContext<
   Partial<ActionRequest> & {
@@ -26,69 +25,13 @@ export interface CloseWebviewOptions {
 }
 
 export const WebviewRequestContext = createContext<{
-  closeWebview: (options?: CloseWebviewOptions) => undefined
-  getString: (stringId: string) => string
+  closeWebview: (options?: CloseWebviewOptions) => Promise<void>
+  getString?: (stringId: string) => string
   params: Record<string, any>
-  session: CoreSession
+  session: Partial<CoreSession>
 }>({
-  closeWebview: () => undefined,
-  getString: () => '',
+  closeWebview: async () => undefined,
+  getString: undefined,
   params: {} as Record<string, any>,
-  session: {} as CoreSession,
-})
-
-export const WebchatContext = createContext<WebchatContextProps>({
-  addMessage: () => {
-    return
-  },
-  closeWebview: () => {
-    return
-  },
-  getThemeProperty: () => {
-    return
-  }, // used to retrieve a specific property of the theme defined by the developer in his 'webchat/index.js'
-  openWebview: () => {
-    return
-  },
-  resolveCase: () => {
-    return
-  },
-  resetUnreadMessages: () => {
-    return
-  },
-  setLastMessageVisible: () => {
-    return
-  },
-  sendAttachment: () => {
-    return
-  },
-  sendInput: () => {
-    return
-  },
-  sendPayload: () => {
-    return
-  },
-  sendText: () => {
-    return
-  },
-  theme: {},
-  toggleWebchat: () => {
-    return
-  },
-  updateLatestInput: () => {
-    return
-  },
-  updateMessage: () => {
-    return
-  },
-  updateReplies: () => {
-    return
-  },
-  updateUser: () => {
-    return
-  },
-  updateWebchatDevSettings: () => {
-    return
-  },
-  webchatState: webchatInitialState,
+  session: {} as Partial<CoreSession>,
 })

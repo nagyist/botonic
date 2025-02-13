@@ -8,8 +8,8 @@
     //TS2300: Duplicate identifier 'LibraryManagedAttributes'.
     "sourceMap": true,
     "target": "ES2015",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "baseUrl": "src",
     "paths": {
       "*": ["src/*", "lib/*", "types/*"]

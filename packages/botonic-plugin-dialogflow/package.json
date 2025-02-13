@@ -1,6 +1,6 @@
 {
   "name": "@botonic/plugin-dialogflow",
-  "version": "0.26.0",
+  "version": "0.31.0",
   "license": "MIT",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
@@ -15,14 +15,15 @@
     "lint_core": "../../node_modules/.bin/eslint_d --cache --quiet 'src/**/*.ts'"
   },
   "dependencies": {
-    "@babel/runtime": "^7.23.9",
-    "@botonic/core": "^0.26.0",
-    "axios": "^1.6.8",
+    "@babel/runtime": "^7.26.0",
+    "@botonic/core": "^0.31.0",
+    "axios": "^1.7.9",
     "jsrsasign": "^10.9.0",
-    "uuid": "^8.3.2"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/jsrsasign": "^10.5.12",
+    "@types/uuid": "^10.0.0",
     "core-js": "^3.35.1"
   },
   "keywords": [
